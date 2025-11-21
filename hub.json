@@ -1,0 +1,426 @@
+{
+  "dashboard": {
+    "title": "🏠 Observability Hub - Landing Page",
+    "tags": ["landing", "overview", "observability"],
+    "timezone": "browser",
+    "refresh": "1m",
+    "time": {"from": "now-1h", "to": "now"},
+    "editable": true,
+    "panels": [
+      {
+        "id": 1,
+        "title": "🎯 Overall System Health",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "description": "Aggregated health score across all services and infrastructure components",
+        "targets": [
+          {
+            "expr": "(count(up{job=~\".*\"} == 1) / count(up{job=~\".*\"})) * 100",
+            "legendFormat": "Infrastructure Up",
+            "refId": "A"
+          },
+          {
+            "expr": "(count(confluent_kafka_server_consumer_lag_offsets < 5000) / count(confluent_kafka_server_consumer_lag_offsets)) * 100",
+            "legendFormat": "Kafka Health",
+            "refId": "B"
+          },
+          {
+            "expr": "(avg(mysql_global_status_threads_connected / mysql_global_variables_max_connections) < 0.8) * 100",
+            "legendFormat": "CloudSQL Health",
+            "refId": "C"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 98, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "🚨 Active Incidents & Alerts",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"critical\"})",
+            "legendFormat": "Critical"
+          },
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"warning\"})",
+            "legendFormat": "Warning"
+          },
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"info\"})",
+            "legendFormat": "Info"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "orientation": "vertical"
+        },
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Critical"},
+              "properties": [
+                {"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Warning"},
+              "properties": [
+                {"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "📊 Request Volume (Last Hour)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) * 3600",
+            "legendFormat": "HTTP Requests/hour"
+          },
+          {
+            "expr": "sum(rate(confluent_kafka_server_sent_records[5m])) * 3600",
+            "legendFormat": "Kafka Messages/hour"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "⚡ Response Time (P95)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "API P95"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "💰 Estimated Daily Cost",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(gcp_billing_cost_estimate_daily) + sum(confluent_cost_estimate_daily)",
+            "legendFormat": "Total Daily Cost"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "📋 Quick Navigation",
+        "type": "text",
+        "gridPos": {"h": 18, "w": 12, "x": 0, "y": 14},
+        "options": {
+          "mode": "markdown",
+          "content": "# 🎯 Service Health\n\n## Overview Dashboards\n- [📊 Executive Summary](/d/kafka-exec) - Business metrics for leadership\n- [🎯 Service Level Indicators](/d/sli-slo) - SLO tracking and error budgets\n- [📈 Service Health Overview](/d/service-health) - All services at a glance\n\n---\n\n# 🔧 Infrastructure Components\n\n## Messaging & Streaming\n- [🟦 Kafka - Consumer Health](/d/kafka-consumer) - Application-focused Kafka metrics\n- [🔷 Kafka - Technical Deep-Dive](/d/kafka-technical) - Detailed Kafka diagnostics\n- [📨 Kafka - Producer Monitoring](/d/kafka-producer) - Producer health & throughput\n\n## Databases\n- [🗄️ CloudSQL - Performance](/d/cloudsql-perf) - Query performance & connections\n- [💾 CloudSQL - Replication](/d/cloudsql-replication) - Replica lag & health\n- [📊 CloudSQL - Capacity](/d/cloudsql-capacity) - Storage & resource usage\n\n## Compute & Orchestration\n- [☸️ Kubernetes - Cluster Health](/d/k8s-cluster) - Node & pod status\n- [📦 Kubernetes - Workloads](/d/k8s-workloads) - Deployment & statefulset health\n- [🖥️ VM Instances](/d/compute-vms) - GCE instance monitoring\n\n## Networking\n- [🌐 Load Balancers](/d/load-balancers) - Traffic distribution & health\n- [🔌 Cloud NAT](/d/cloud-nat) - NAT gateway metrics\n- [🔒 Cloud Armor](/d/cloud-armor) - WAF & DDoS protection\n\n---\n\n# 👥 Team Views\n\n- [👔 Executive Dashboard](/d/executive) - C-level metrics\n- [🎨 Product Team Dashboard](/d/product) - Feature health & usage\n- [🚨 On-Call Engineer View](/d/oncall) - Quick incident response\n- [💻 Developer Dashboard](/d/developer) - Service dependencies & APIs\n\n---\n\n# 📚 Resources\n\n- [📖 Runbook Index](/wiki/runbooks)\n- [🔔 Alert Definitions](/wiki/alerts)\n- [🎓 Dashboard Training](/wiki/training)\n- [❓ FAQ](/wiki/faq)"
+        }
+      },
+      {
+        "id": 11,
+        "title": "🔴 Critical Alerts (Action Required)",
+        "type": "table",
+        "gridPos": {"h": 18, "w": 12, "x": 12, "y": 14},
+        "description": "Critical alerts requiring immediate attention",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\", severity=\"critical\"}",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "Value": true,
+                "alertstate": true,
+                "severity": true
+              },
+              "renameByName": {
+                "alertname": "Alert",
+                "job": "Component",
+                "instance": "Instance"
+              }
+            }
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [{"displayName": "Alert"}]
+        },
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Alert"},
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {"type": "color-background"}
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"value": 0, "color": "red"}
+                    ]
+                  }
+                },
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "View Details",
+                      "url": "/d/kafka-technical?var-consumer_group=${__data.fields.job}"
+                    },
+                    {
+                      "title": "Runbook",
+                      "url": "/wiki/runbooks/${__data.fields.Alert}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 20,
+        "title": "📊 Component Health Matrix",
+        "type": "status-history",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 32},
+        "description": "Visual timeline of component health - Green=Healthy, Yellow=Degraded, Red=Down",
+        "targets": [
+          {
+            "expr": "up{job=~\"kafka|cloudsql|kubernetes|loadbalancer\"}",
+            "legendFormat": "{{job}} - {{instance}}"
+          }
+        ],
+        "options": {
+          "showValue": "never",
+          "rowHeight": 0.7
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 70
+            },
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 1, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 30,
+        "title": "🎯 Service Level Objectives (SLOs) - Last 30 Days",
+        "type": "bargauge",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
+        "description": "SLO compliance percentage. Target: 99.9% for critical services",
+        "targets": [
+          {
+            "expr": "(1 - (sum(rate(http_requests_total{status=~\"5..\"}[30d])) / sum(rate(http_requests_total[30d])))) * 100",
+            "legendFormat": "API Availability",
+            "instant": true
+          },
+          {
+            "expr": "(1 - (sum(rate(http_request_duration_seconds_bucket{le=\"0.5\"}[30d])) / sum(rate(http_request_duration_seconds_count[30d])))) * 100",
+            "legendFormat": "API Latency P95<500ms",
+            "instant": true
+          },
+          {
+            "expr": "(sum(count_over_time((confluent_kafka_server_consumer_lag_offsets < 5000)[30d:1m])) / sum(count_over_time(confluent_kafka_server_consumer_lag_offsets[30d:1m]))) * 100",
+            "legendFormat": "Kafka Processing SLO",
+            "instant": true
+          },
+          {
+            "expr": "(avg(mysql_global_status_threads_connected{job=\"cloudsql\"} / mysql_global_variables_max_connections < 0.8)) * 100",
+            "legendFormat": "CloudSQL Availability",
+            "instant": true
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 95,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 95, "color": "red"},
+                {"value": 99, "color": "yellow"},
+                {"value": 99.9, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 31,
+        "title": "📈 Error Budget Burn Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
+        "description": "How fast we're consuming our error budget. >1x = burning budget faster than allowed",
+        "targets": [
+          {
+            "expr": "(rate(http_requests_total{status=~\"5..\"}[1h]) / rate(http_requests_total[1h])) / 0.001",
+            "legendFormat": "API Error Budget Burn"
+          },
+          {
+            "expr": "(rate(confluent_kafka_server_consumer_lag_offsets > 5000[1h])) / 0.001",
+            "legendFormat": "Kafka SLO Burn"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "yellow"},
+                {"value": 2, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "legend": {"displayMode": "table", "placement": "bottom"}
+        }
+      },
+      {
+        "id": 40,
+        "title": "💡 Getting Started Guide",
+        "type": "text",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 50},
+        "options": {
+          "mode": "markdown",
+          "content": "# 🚀 Welcome to the Observability Hub\n\n## 👋 First Time Here?\n\n### Step 1: Understand Your Role\n- **Executive/Leadership?** → Start with [Executive Summary](/d/kafka-exec)\n- **Product Manager?** → Check [Product Team Dashboard](/d/product)\n- **On-Call Engineer?** → Go to [On-Call View](/d/oncall)\n- **Developer?** → See [Developer Dashboard](/d/developer)\n\n### Step 2: Check System Health\n1. Look at **Overall System Health** (top panel) - Should be green (>98%)\n2. Review **Active Incidents** - Should be 0 or very low\n3. Check **Component Health Matrix** - All green = good day\n\n### Step 3: Dive Deeper (If Needed)\n- Red alerts? Click alert name → Opens detailed dashboard\n- Yellow warnings? Review component-specific dashboard\n- Everything green? You're good! ✅\n\n---\n\n## 🎯 Dashboard Organization\n\n### By Audience\n| Role | Start Here | Refresh Rate | Focus |\n|------|-----------|--------------|-------|\n| Executive | Executive Summary | 5 min | Business metrics, costs |\n| Product | Product Dashboard | 1 min | Feature health, usage |\n| SRE/DevOps | Technical Deep-Dive | 30 sec | Infrastructure metrics |\n| On-Call | On-Call View | 15 sec | Active incidents |\n\n### By Component\n| Component | Dashboard | When to Check |\n|-----------|-----------|---------------|\n| Kafka | Consumer Health | Messages delayed? |\n| CloudSQL | Performance | Slow queries? |\n| Kubernetes | Cluster Health | Pod restarts? |\n| Load Balancers | LB Dashboard | Traffic issues? |\n\n---\n\n## 🚨 What to Do When You See Red\n\n### Critical Alert Workflow\n```\n1. Check Alert Name → Understand what's broken\n2. Click \"View Details\" → Opens component dashboard\n3. Click \"Runbook\" → Follow step-by-step fix\n4. Post in #incidents → Notify team\n5. Page on-call → If you can't resolve in 15 min\n```\n\n### Common Issues Quick Links\n- [Kafka Consumer Lag High](/wiki/runbooks/kafka-lag)\n- [CloudSQL Connection Pool Full](/wiki/runbooks/sql-connections)\n- [Pod CrashLoopBackOff](/wiki/runbooks/pod-crash)\n- [High API Error Rate](/wiki/runbooks/api-errors)\n\n---\n\n## 📚 Training & Resources\n\n- 🎥 [Dashboard Tour Video](link) (10 min)\n- 📖 [Metrics Glossary](/wiki/metrics)\n- 🔔 [Alert Definitions](/wiki/alerts)\n- 💬 **Slack Support:** #observability-help\n- 📧 **Email:** sre-team@company.com\n\n---\n\n## 🎨 Dashboard Customization\n\nWant to customize this for your team?\n1. Click ⭐ (top right) → Save to your favorites\n2. Click **Dashboard settings** → Variables → Add your filters\n3. Create custom views: **Dashboard settings** → **Make a copy**\n\n---\n\n💡 **Pro Tip:** Set this as your browser homepage for quick daily health checks!"
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "enable": true,
+          "iconColor": "blue",
+          "tags": ["deployment"],
+          "textFormat": "Deployment: {{tags}}"
+        },
+        {
+          "name": "Incidents",
+          "enable": true,
+          "iconColor": "red",
+          "tags": ["incident"],
+          "textFormat": "Incident: {{tags}}"
+        },
+        {
+          "name": "Maintenance Windows",
+          "enable": true,
+          "iconColor": "yellow",
+          "tags": ["maintenance"],
+          "textFormat": "Maintenance: {{tags}}"
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "📊 All Dashboards",
+        "type": "dashboards",
+        "tags": ["observability"],
+        "icon": "external link",
+        "tooltip": "Browse all observability dashboards",
+        "includeVars": false,
+        "keepTime": false
+      },
+      {
+        "title": "📖 Documentation",
+        "type": "link",
+        "url": "/wiki/observability",
+        "icon": "doc",
+        "tooltip": "Observability documentation"
+      },
+      {
+        "title": "🚨 Incident Response",
+        "type": "link",
+        "url": "/wiki/incident-response",
+        "icon": "bolt",
+        "tooltip": "Incident response procedures"
+      }
+    ]
+  }
+}
