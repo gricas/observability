@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observability Hub</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0b0c0e;
+      color: #d8d9da;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+    }
+    
+    .hero {
+      background: linear-gradient(135deg, #1f1f23 0%, #111217 100%);
+      padding: 60px 40px;
+      border-bottom: 1px solid #2d2d32;
+    }
+    
+    .hero h1 {
+      font-size: 42px;
+      font-weight: 300;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+    
+    .hero p {
+      font-size: 18px;
+      color: #9fa0a4;
+      font-weight: 300;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin: 50px 0 24px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2d2d32;
+    }
+    
+    .section-header h2 {
+      font-size: 24px;
+      font-weight: 500;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .section-icon {
+      font-size: 28px;
+    }
+    
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .dashboard-card {
+      background: #18181b;
+      border: 1px solid #2d2d32;
+      border-radius: 8px;
+      padding: 24px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .dashboard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: transparent;
+      transition: background 0.2s ease;
+    }
+    
+    .dashboard-card:hover {
+      background: #1f1f23;
+      border-color: #ff6b35;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    }
+    
+    .dashboard-card.slo:hover::before { background: #ff6b35; }
+    .dashboard-card.golden:hover::before { background: #ffc107; }
+    .dashboard-card.infra:hover::before { background: #4a9eff; }
+    .dashboard-card.data:hover::before { background: #9c27b0; }
+    .dashboard-card.external:hover::before { background: #00bcd4; }
+    
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    
+    .card-badge {
+      background: #2d2d32;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .card-badge.prod { background: #dc3545; color: #ffffff; }
+    .card-badge.nonprod { background: #ffc107; color: #000000; }
+    .card-badge.all { background: #4a9eff; color: #ffffff; }
+    
+    .card-description {
+      color: #9fa0a4;
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    
+    .card-metrics {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #2d2d32;
+    }
+    
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .metric-label {
+      font-size: 11px;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .metric-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-top: 4px;
+    }
+    
+    .card-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .card-link {
+      color: #4a9eff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    
+    .card-link:hover {
+      color: #6eb8ff;
+      text-decoration: underline;
+    }
+    
+    .card-link::after {
+      content: '→';
+      font-size: 16px;
+    }
+    
+    .quick-access {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #18181b;
+      border: 1px solid #2d2d32;
+      border-radius: 8px;
+      padding: 16px;
+      min-width: 200px;
+      z-index: 1000;
+    }
+    
+    .quick-access h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .quick-link {
+      display: block;
+      color: #9fa0a4;
+      text-decoration: none;
+      padding: 8px 0;
+      font-size: 14px;
+      border-bottom: 1px solid #2d2d32;
+      transition: color 0.2s;
+    }
+    
+    .quick-link:last-child {
+      border-bottom: none;
+    }
+    
+    .quick-link:hover {
+      color: #4a9eff;
+    }
+    
+    .env-selector {
+      display: flex;
+      gap: 8px;
+      margin: 30px 0;
+      padding: 16px;
+      background: #18181b;
+      border-radius: 8px;
+      border: 1px solid #2d2d32;
+    }
+    
+    .env-btn {
+      flex: 1;
+      padding: 12px 24px;
+      background: transparent;
+      border: 1px solid #2d2d32;
+      border-radius: 6px;
+      color: #9fa0a4;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .env-btn:hover {
+      background: #1f1f23;
+      border-color: #4a9eff;
+      color: #ffffff;
+    }
+    
+    .env-btn.active {
+      background: #4a9eff;
+      border-color: #4a9eff;
+      color: #ffffff;
+    }
+    
+    @media (max-width: 768px) {
+      .panel-grid {
+        grid-template-columns: 1fr;
+      }
+      .quick-access {
+        position: static;
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="container">
+      <h1>Observability Hub</h1>
+      <p>Enterprise monitoring, SLO tracking, and infrastructure insights</p>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Environment Selector -->
+    <div class="env-selector">
+      <button class="env-btn active" onclick="filterEnv('all')">All Environments</button>
+      <button class="env-btn" onclick="filterEnv('prod')">Production</button>
+      <button class="env-btn" onclick="filterEnv('nonprod')">Non-Production</button>
+      <button class="env-btn" onclick="filterEnv('qa')">QA</button>
+    </div>
+
+    <!-- SLO & Service Level Indicators -->
+    <div class="section-header">
+      <h2><span class="section-icon">🎯</span>SLO & Service Level Indicators</h2>
+    </div>
+    <div class="panel-grid">
+      
+      <div class="dashboard-card slo" data-env="all" onclick="navigate('/d/slo-overview')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Platform SLO Dashboard</div>
+            <span class="card-badge all">All Envs</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Aggregated SLO health scores across 12 services. Traffic-weighted availability, latency P95/P99, and error budgets.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Target</span>
+            <span class="metric-value">99.9%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Budget</span>
+            <span class="metric-value">43.2m/mo</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/slo-overview" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card slo" data-env="prod" onclick="navigate('/d/api-sli')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">API Gateway SLI</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Golden Signals for API Gateway: request rate, error rate %, latency percentiles (P50/P95/P99), saturation metrics.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Availability</span>
+            <span class="metric-value">99.87%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">P99 Latency</span>
+            <span class="metric-value">487ms</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/api-sli" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card slo" data-env="prod" onclick="navigate('/d/error-budget')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Error Budget Tracking</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          30-day rolling error budget consumption, burn rate alerts, service-level budget allocation by tier.
+        </div>
+        <div class="card-links">
+          <a href="/d/error-budget" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RED Method Dashboards -->
+    <div class="section-header">
+      <h2><span class="section-icon">🔥</span>RED Method (Rate, Errors, Duration)</h2>
+    </div>
+    <div class="panel-grid">
+      
+      <div class="dashboard-card golden" data-env="prod" onclick="navigate('/d/red-java-services')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Java Backend Services</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Request rate (rps), HTTP error rate by code, response duration histograms. JVM memory, GC metrics, thread pools.
+        </div>
+        <div class="card-links">
+          <a href="/d/red-java-services" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card golden" data-env="prod" onclick="navigate('/d/red-react-frontend')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">React Frontend</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Client-side error tracking, page load times, API call duration from browser perspective, resource timing.
+        </div>
+        <div class="card-links">
+          <a href="/d/red-react-frontend" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card golden" data-env="all" onclick="navigate('/d/istio-red')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Istio Service Mesh</div>
+            <span class="card-badge all">All Envs</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Service-to-service traffic metrics, mutual TLS adoption, circuit breaker state, retry/timeout rates.
+        </div>
+        <div class="card-links">
+          <a href="/d/istio-red" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- USE Method Infrastructure -->
+    <div class="section-header">
+      <h2><span class="section-icon">⚙️</span>USE Method (Utilization, Saturation, Errors)</h2>
+    </div>
+    <div class="panel-grid">
+      
+      <div class="dashboard-card infra" data-env="prod" onclick="navigate('/d/gke-nodes')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">GKE Node Metrics</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          CPU/memory utilization, disk I/O saturation, network bandwidth, node conditions, pod scheduling pressure.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Nodes</span>
+            <span class="metric-value">24</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Avg CPU</span>
+            <span class="metric-value">67%</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/gke-nodes" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card infra" data-env="prod" onclick="navigate('/d/gke-pods')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">GKE Pod Health</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Pod restart rates, crash loop detection, resource requests vs limits, OOMKilled events, pending pods.
+        </div>
+        <div class="card-links">
+          <a href="/d/gke-pods" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card infra" data-env="all" onclick="navigate('/d/persistent-volumes')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Persistent Volume Monitoring</div>
+            <span class="card-badge all">All Envs</span>
+          </div>
+        </div>
+        <div class="card-description">
+          PV capacity utilization, I/O operations, storage class performance, mount errors, provisioning latency.
+        </div>
+        <div class="card-links">
+          <a href="/d/persistent-volumes" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Kafka Monitoring -->
+    <div class="section-header">
+      <h2><span class="section-icon">📨</span>Kafka Infrastructure</h2>
+    </div>
+    <div class="panel-grid">
+      
+      <div class="dashboard-card data" data-env="prod" onclick="navigate('/d/kafka-cluster')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Confluent Kafka Cluster</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Broker health, under-replicated partitions, controller status, ZooKeeper latency, disk usage per broker.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Brokers</span>
+            <span class="metric-value">6</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Topics</span>
+            <span class="metric-value">42</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/kafka-cluster" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card data" data-env="prod" onclick="navigate('/d/kafka-topics')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Kafka Topic Metrics</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Message rate in/out, partition count, retention policy, consumer lag by group, replication factor health.
+        </div>
+        <div class="card-links">
+          <a href="/d/kafka-topics" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card data" data-env="prod" onclick="navigate('/d/kafka-consumers')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Consumer Group Lag</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Consumer lag per partition, commit rate, rebalance events, offset commit latency, group membership stability.
+        </div>
+        <div class="card-links">
+          <a href="/d/kafka-consumers" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- External Services & Dependencies -->
+    <div class="section-header">
+      <h2><span class="section-icon">🌐</span>External Services & Dependencies</h2>
+    </div>
+    <div class="panel-grid">
+      
+      <div class="dashboard-card external" data-env="prod" onclick="navigate('/d/cloudsql')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">CloudSQL Databases</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Connection pool utilization, query latency, read replica lag, disk I/O, CPU/memory usage, failover events.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Instances</span>
+            <span class="metric-value">8</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Connections</span>
+            <span class="metric-value">1247</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/cloudsql" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card external" data-env="prod" onclick="navigate('/d/redis-memorystore')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Memorystore Redis</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Connection saturation, memory usage, eviction rate, cache hit ratio, command latency, replication lag.
+        </div>
+        <div class="card-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Hit Rate</span>
+            <span class="metric-value">94.2%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Connections</span>
+            <span class="metric-value">8247/10k</span>
+          </div>
+        </div>
+        <div class="card-links">
+          <a href="/d/redis-memorystore" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="dashboard-card external" data-env="prod" onclick="navigate('/d/gcs-buckets')">
+        <div class="card-header">
+          <div>
+            <div class="card-title">GCS Storage Buckets</div>
+            <span class="card-badge prod">Prod</span>
+          </div>
+        </div>
+        <div class="card-description">
+          Object count, storage bytes by class, request rate, error rate by operation, bucket access patterns.
+        </div>
+        <div class="card-links">
+          <a href="/d/gcs-buckets" class="card-link">View Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Quick Access Sidebar -->
+  <div class="quick-access">
+    <h3>Quick Access</h3>
+    <a href="/alerting/list" class="quick-link">Alert Rules</a>
+    <a href="/d/alert-analysis" class="quick-link">Alert Analysis</a>
+    <a href="https://opsgenie.domain" class="quick-link">Opsgenie Console</a>
+    <a href="https://servicenow.domain" class="quick-link">ServiceNow Incidents</a>
+    <a href="/explore" class="quick-link">Explore Metrics</a>
+    <a href="/datasources" class="quick-link">Data Sources</a>
+  </div>
+
+  <script>
+    function navigate(url) {
+      window.location.href = url;
+    }
+
+    function filterEnv(env) {
+      // Update active button
+      document.querySelectorAll('.env-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // Filter cards
+      document.querySelectorAll('.dashboard-card').forEach(card => {
+        const cardEnv = card.getAttribute('data-env');
+        if (env === 'all' || cardEnv === env || cardEnv === 'all') {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
